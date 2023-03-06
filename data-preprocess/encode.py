@@ -1,36 +1,56 @@
+
+import pickle
 import os
-import numpy as np
 from datasets import load_dataset, Dataset
 from tokenizers import Tokenizer
 import fire
+import numpy as np
 
-def save(data, split):
-    data_length = sum(map(lambda x: x['len'], data))
-    pth = os.path.join(os.path.dirname(__file__), f'{split}.bin')
-    array_file = np.memmap(pth, dtype=np.uint16, mode="w+", shape=(data_length,))
+def save(data, sequence_length=512, tokenizer_path='./tokenizer.json'):
+    num_rows = len(data)
+    pth = os.path.join(os.path.dirname(__file__), 'data.bin')
+    meta_path = os.path.join(os.path.dirname(__file__), 'meta.pkl')
 
-    counter = 0
-    for row in data:
+    #array = np.memmap(pth, dtype=np.uint16, mode='w+', shape=(num_rows, sequence_length))
+    array = np.zeros((num_rows, sequence_length), dtype=np.uint16)
+
+    meta = {
+        'num_rows': num_rows,
+        'sequence_length': sequence_length,
+        'data_pth': pth,
+        'tokenizer_path': tokenizer_path
+    }
+
+    for i, row in enumerate(data):
         tokens = row['tokens']
-        array_file[counter:counter+row['len']] = tokens
-        counter += row['len']
+        array[i, :] = tokens
 
-    array_file.flush()
+    # save array to pth as binary
+    with open(pth, 'wb') as f:
+        pickle.dump(array, f)
 
-def main(tokenizer_path = 'tokenizer.json', min_length = 0, sequence_length = 512):
+    with open(meta_path, 'wb') as f:
+        pickle.dump(meta, f)
+
+
+def main(tokenizer_path='./tokenizer.json', sequence_length=512):
+    print('Loading tokenizer from {}'.format(tokenizer_path))
+    print('sequence_length: {}'.format(sequence_length))
     tokenizer = Tokenizer.from_file(tokenizer_path)
 
-    data = load_dataset('wikitext', 'wikitext-2-v1', split='train+validation+test')
+    data = load_dataset(
+        'wikitext',
+        'wikitext-2-v1',
+        split='train+validation+test'
+    )
+
     data = data.filter(lambda x: len(x['text']) > 0)
 
     def encode(text):
         enc = tokenizer.encode(text['text'])
-        return { "tokens": enc.ids, "len": len(enc)}
+        return {"tokens": enc.ids, "len": len(enc)}
 
     def transform(text):
-        # everythin over sequence_length i chunked into multiple sequences
-        # texts is the encoded output from encode()
-
         tokens = text['tokens']
         length = text['len']
         chunks = []
@@ -38,22 +58,23 @@ def main(tokenizer_path = 'tokenizer.json', min_length = 0, sequence_length = 51
         if length > sequence_length:
             for i in range(0, length, sequence_length):
                 current = tokens[i:i+sequence_length]
-                chunks.append({ "tokens": current, "len": len(current) })
+                if len(current) == sequence_length:
+                    chunks.append({"tokens": current, "len": len(current)})
         else:
-            chunks.append({ "tokens": tokens, "len": length })
+            chunks.append({"tokens": tokens, "len": length})
 
         return chunks
 
     data = data.map(encode, remove_columns=['text'], num_proc=4)
-
-    if min_length > 0:
-        data = data.filter(lambda x: x['len'] > min_length)
+    print(data)
+    data = data.filter(lambda x: x['len'] > sequence_length)
 
     transformed_data = []
     for row in data:
         transformed_data.extend(transform(row))
 
-    save(transformed_data, 'train')
+    save(transformed_data, sequence_length=sequence_length, tokenizer_path=tokenizer_path)
+
 
 if __name__ == '__main__':
     fire.Fire(main)
