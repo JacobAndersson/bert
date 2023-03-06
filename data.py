@@ -27,6 +27,7 @@ class WikiText(Dataset):
         return self.length
 
     def __getitem__(self, idx, mask=True):
+        #TODO: Masking
         ex = self.data[idx].astype(np.int32)
         return torch.tensor(ex, dtype=torch.long)
 

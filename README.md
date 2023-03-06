@@ -4,6 +4,11 @@ The [cramming paper](https://arxiv.org/abs/2212.14034) showed that it is possibl
 
 # TODO
 
+* data
+ ** masking
 * Model
+ ** embedding layers
+ ** encoder layers
+ ** classifier layers
 * training loop
 * results :p

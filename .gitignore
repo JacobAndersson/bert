@@ -3,3 +3,4 @@
 *.bin
 *.pkl
 *.txt
+__pycache__/*
