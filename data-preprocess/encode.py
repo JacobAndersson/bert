@@ -6,12 +6,13 @@ from tokenizers import Tokenizer
 import fire
 import numpy as np
 
+
 def save(data, sequence_length=512, tokenizer_path='./tokenizer.json'):
     num_rows = len(data)
     pth = os.path.join(os.path.dirname(__file__), 'data.bin')
     meta_path = os.path.join(os.path.dirname(__file__), 'meta.pkl')
 
-    #array = np.memmap(pth, dtype=np.uint16, mode='w+', shape=(num_rows, sequence_length))
+    #TODO - use memmap
     array = np.zeros((num_rows, sequence_length), dtype=np.uint16)
 
     meta = {
@@ -25,7 +26,6 @@ def save(data, sequence_length=512, tokenizer_path='./tokenizer.json'):
         tokens = row['tokens']
         array[i, :] = tokens
 
-    # save array to pth as binary
     with open(pth, 'wb') as f:
         pickle.dump(array, f)
 
@@ -33,16 +33,26 @@ def save(data, sequence_length=512, tokenizer_path='./tokenizer.json'):
         pickle.dump(meta, f)
 
 
-def main(tokenizer_path='./tokenizer.json', sequence_length=512):
+def main(tokenizer_path='./tokenizer.json', sequence_length=128):
     print('Loading tokenizer from {}'.format(tokenizer_path))
     print('sequence_length: {}'.format(sequence_length))
     tokenizer = Tokenizer.from_file(tokenizer_path)
+    sequence_length -= 1
+
+    tokenizer.enable_padding(
+        pad_id=tokenizer.model.token_to_id('[PAD]'),
+        pad_type_id=0,
+        length=sequence_length
+    )
 
     data = load_dataset(
         'wikitext',
         'wikitext-2-v1',
         split='train+validation+test'
     )
+
+    cls_id = tokenizer.model.token_to_id('[CLS]')
+    pad_id = tokenizer.model.token_to_id('[PAD]')
 
     data = data.filter(lambda x: len(x['text']) > 0)
 
@@ -59,22 +69,26 @@ def main(tokenizer_path='./tokenizer.json', sequence_length=512):
             for i in range(0, length, sequence_length):
                 current = tokens[i:i+sequence_length]
                 if len(current) == sequence_length:
+                    current = [cls_id] + current 
+                    chunks.append({"tokens": current, "len": len(current)})
+                else:
+                    # add cls
+                    current = [cls_id] + current
+                    current += [pad_id] * (sequence_length - len(current)+1)
                     chunks.append({"tokens": current, "len": len(current)})
         else:
+            tokens = [cls_id] + tokens
             chunks.append({"tokens": tokens, "len": length})
 
         return chunks
 
     data = data.map(encode, remove_columns=['text'], num_proc=4)
-    print(data)
-    data = data.filter(lambda x: x['len'] > sequence_length)
 
     transformed_data = []
     for row in data:
         transformed_data.extend(transform(row))
 
-    save(transformed_data, sequence_length=sequence_length, tokenizer_path=tokenizer_path)
-
+    save(transformed_data, sequence_length=sequence_length+1, tokenizer_path=tokenizer_path)
 
 if __name__ == '__main__':
     fire.Fire(main)

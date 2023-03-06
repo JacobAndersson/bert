@@ -12,10 +12,8 @@ class WikiText(Dataset):
 
             tokenizer_path = self.meta['tokenizer_path']
             self.tokenizer = Tokenizer.from_file(tokenizer_path)
-            print(self.tokenizer)
-            
-        print(self.tokenizer.token_to_id('[CLS]'))
-         
+
+        self.mask_id = self.tokenizer.model.token_to_id('[MASK]')
 
         with open(self.meta['data_pth'], 'r+b') as f:
             self.data = np.memmap(
@@ -25,25 +23,22 @@ class WikiText(Dataset):
                 shape=(self.meta['num_rows'], self.meta['sequence_length'])
             )
 
-
     def __len__(self):
         return self.length
 
     def __getitem__(self, idx, mask=True):
-        ex = self.data[idx].astype(np.int16)
-        #add bos and eos
-        #ex = np.insert(ex, 0, self.bos_id)
-        #ex = np.append(ex, self.eos_id)
-
-        return ex
+        ex = self.data[idx].astype(np.int32)
+        return torch.tensor(ex, dtype=torch.long)
 
 
 if __name__ == '__main__': 
     from torch.utils.data import DataLoader
+    import torch
+
+    torch.manual_seed(42)
     data = WikiText('./data-preprocess/meta.pkl')
 
-    loader = DataLoader(data, batch_size=64, shuffle=True)
+    loader = DataLoader(data, batch_size=1, shuffle=False)
     for i in loader:
-        print(i)
         print(i.shape)
         break
