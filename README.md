@@ -4,11 +4,7 @@ The [cramming paper](https://arxiv.org/abs/2212.14034) showed that it is possibl
 
 # TODO
 
-* data
- ** masking
 * Model
- ** embedding layers
- ** encoder layers
- ** classifier layers
+ ** sinusiodal position embedding
 * training loop
 * results :p
