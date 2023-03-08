@@ -13,6 +13,32 @@ class BertConfig:
     ff_dim: int = 3072
     bias: bool = True
     dropout: float = 0.1
+    seq_len: int = 128
+
+class SinusoidalPositionalEmbedding(nn.Module):
+    #TODO rewrite!
+    def __init__(self, config):
+        super().__init__()
+        self.config = config
+        self.max_len = self.config.seq_len
+
+        model_dim = self.config.model_dim
+            
+        pos = torch.arange(0, self.max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, model_dim, 2) * -(math.log(10000.0) / model_dim))
+
+        pe = torch.zeros(1, self.max_len, model_dim)
+        pe[0, :, 0::2] = torch.sin(pos * div_term)
+        pe[0, :, 1::2] = torch.cos(pos * div_term)
+
+        self.register_buffer('pe', pe)
+
+        self.dropout = nn.Dropout(config.dropout)
+
+    def forward(self, x):
+        x = x + self.pe[:x.size(1)]
+
+        return self.dropout(x)
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, config):
@@ -86,7 +112,6 @@ class EncoderLayer(nn.Module):
 class Bert(nn.Module):
     def __init__(self, config):
         # TODO: weight initialization
-        # TODO weight tieing
 
         super().__init__()
         self.config = config
@@ -96,6 +121,8 @@ class Bert(nn.Module):
             embedding_dim=config.model_dim
         )
 
+        self.pos_embedding = SinusoidalPositionalEmbedding(config)
+
         self.encoder_layers = nn.ModuleList(
             [ EncoderLayer(config) for _ in range(config.n_layers) ]
         )
@@ -103,8 +130,11 @@ class Bert(nn.Module):
         self.norm = nn.LayerNorm(config.model_dim)
         self.output = nn.Linear(config.model_dim, config.vocab_size)
 
+        self.embedding.weight = self.output.weight
+
     def forward(self, x):
         x = self.embedding(x)
+        x = self.pos_embedding(x)
 
         for layer in self.encoder_layers:
             x = layer(x)
