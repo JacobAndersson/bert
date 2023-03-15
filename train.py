@@ -3,6 +3,7 @@ from data import WikiText
 from torch.utils.data import DataLoader
 import torch
 import numpy as np
+import time
 
 torch.manual_seed(42)
 np.random.seed(42)
@@ -17,40 +18,60 @@ config = BertConfig(
 
 data = WikiText('./data-preprocess/meta.pkl')
 loader = DataLoader(data, batch_size=2, shuffle=True)
+loader_iter = iter(loader)
+
+def get_batch():
+    global loader_iter
+    try:
+        x, y = next(loader_iter)
+    except StopIteration:
+        loader_iter = iter(loader)
+        x, y = next(loader_iter)
+    return x, y
+
 
 model = Bert(config)
 
-criterion = torch.nn.CrossEntropyLoss()
+lr = 1e-4
+max_steps = 100
+grad_accumulation_steps = 5
+
+criterion = torch.nn.CrossEntropyLoss(ignore_index=3)
 optimizer = torch.optim.AdamW(
     model.parameters(),
-    lr=1e-4,
+    lr=lr,
     betas=(0.9, 0.95),
     weight_decay=0.1,
     eps=1e-12
 )
 
+def get_lr(step, max_steps, max_lr):
+    if step < max_steps/2:
+        return 2 * max_lr * step / max_steps
+    return 2 * max_lr * (max_steps - step) / max_steps
+
 print(model)
 
-for batch_idx, (x, y) in enumerate(loader):
-    print('x', x.shape)
-    print('y', y.shape)
+for step in range(max_steps):
 
-    for _ in range(10):
+    lr = get_lr(step, 100, 1e-4)
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+    start = time.time()
+    for _ in range(grad_accumulation_steps):
+        x, y = get_batch()
         y_pred = model(x)
-        print('y_pred', y_pred.shape)
         y_pred = y_pred.transpose(1, 2)
-       
+
         loss = criterion(y_pred, y)
-        print('loss', loss.item())
-
         loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-    
-    y_pred = torch.functional.F.softmax(y_pred, dim=1)
-    output_pred = torch.argmax(y_pred, dim=1)
-    print('pred', output_pred)
-    break
 
-    if batch_idx == 5:
-        break
+    elapsed = time.time() - start
+    print(f"step: {step}, loss: {loss.item():.4f}, lr: {lr:.6f}, batch took: {elapsed:.2f}s")
+
+    optimizer.step()
+    optimizer.zero_grad()
+
+    #y_pred = torch.functional.F.softmax(y_pred, dim=1)
+    #output_pred = torch.argmax(y_pred, dim=1)
