@@ -16,7 +16,7 @@ class BertConfig:
     seq_len: int = 128
 
 class SinusoidalPositionalEmbedding(nn.Module):
-    #TODO rewrite!
+    # TODO rewrite!
     def __init__(self, config):
         super().__init__()
         self.config = config
@@ -45,8 +45,6 @@ class MultiHeadAttention(nn.Module):
         super().__init__()
         self.config = config
 
-        embedding_dim = config.model_dim
-        
         self.k = nn.Linear(config.model_dim, config.model_dim, bias=config.bias)
         self.q = nn.Linear(config.model_dim, config.model_dim, bias=config.bias)
         self.v = nn.Linear(config.model_dim, config.model_dim, bias=config.bias)
