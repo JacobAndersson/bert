@@ -15,11 +15,12 @@ def main(
     n_layers=2,
     n_heads=4,
     ff_dim=3072,
-    lr=1e-2,
+    max_lr=1e-2,
     max_steps=100,
     grad_accumulation_steps=5,
     batch_size=32,
     device='cuda',
+    dry_run=False,
 ):
     config = BertConfig(
         model_dim=model_dim,
@@ -50,7 +51,7 @@ def main(
     criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_idx)
     optimizer = torch.optim.AdamW(
         model.parameters(),
-        lr=lr,
+        lr=max_lr,
         betas=(0.9, 0.95),
         weight_decay=0.1,
         eps=1e-12
@@ -66,15 +67,13 @@ def main(
 
     for step in range(max_steps):
 
-        print('step', step)
-        lr = get_lr(step, max_steps, lr)
-        print('lr', lr)
+        lr = get_lr(step, max_steps, max_lr)
+
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
         start = time.time()
         for _ in range(grad_accumulation_steps):
-            print('here')
             x, y = get_batch()
             y_pred = model(x)
             y_pred = y_pred.transpose(1, 2)
@@ -83,10 +82,13 @@ def main(
             loss.backward()
 
         elapsed = time.time() - start
-        print(f"step: {step}, loss: {loss.item():.4f}, lr: {lr:.6f}, batch took: {elapsed:.2f}s")
+        print(f"step: {step}, loss: {loss.item():.4f}, lr: {lr}, batch took: {elapsed:.2f}s")
 
         optimizer.step()
         optimizer.zero_grad()
+
+        if dry_run and step > 5:
+            break
 
         #y_pred = torch.functional.F.softmax(y_pred, dim=1)
         #output_pred = torch.argmax(y_pred, dim=1)
