@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 import math
 
+
 @dataclasses.dataclass
 class BertConfig:
     model_dim: int = 768
@@ -140,3 +141,14 @@ class Bert(nn.Module):
         x = self.norm(x)
         x = self.output(x)
         return x
+    
+    def parameter_count(self):
+        count = 0
+
+        for param in self.parameters():
+            if param.requires_grad:
+                count += param.numel()
+        
+        count -= self.embedding.weight.numel()
+        return count
+

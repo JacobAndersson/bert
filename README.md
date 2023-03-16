@@ -8,7 +8,6 @@ The [cramming paper](https://arxiv.org/abs/2212.14034) showed that it is possibl
  * sinusiodal position embedding
  * weight init
 * wandb tracking of experiments
-* parameter count
 * results :p
  * test set
  * simple visualizer

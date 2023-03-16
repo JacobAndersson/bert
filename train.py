@@ -15,7 +15,7 @@ def main(
     n_layers=2,
     n_heads=4,
     ff_dim=3072,
-    max_lr=1e-2,
+    max_lr=1e-3,
     max_steps=100,
     grad_accumulation_steps=5,
     batch_size=32,
@@ -49,11 +49,11 @@ def main(
 
     pad_idx = 3
     criterion = torch.nn.CrossEntropyLoss(ignore_index=pad_idx)
-    optimizer = torch.optim.AdamW(
+    optimizer = torch.optim.Adam(
         model.parameters(),
         lr=max_lr,
-        betas=(0.9, 0.95),
-        weight_decay=0.1,
+        betas=(0.9, 0.98),
+        weight_decay=0.01,
         eps=1e-12
     )
 
@@ -64,6 +64,8 @@ def main(
 
     print(model)
     print('config', config)
+    param_count = model.parameter_count()
+    print(f'Parameter count {param_count/1e6:.2f}M')
 
     for step in range(max_steps):
 
