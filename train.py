@@ -21,6 +21,7 @@ def main(
     batch_size=32,
     device='cuda',
     dry_run=False,
+    bias=False,
 ):
     config = BertConfig(
         model_dim=model_dim,
@@ -28,6 +29,7 @@ def main(
         n_layers=n_layers,
         n_heads=n_heads,
         ff_dim=ff_dim,
+        bias=bias,
     )
 
     data = WikiText('./data-preprocess/meta.pkl')

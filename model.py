@@ -104,8 +104,10 @@ class EncoderLayer(nn.Module):
         self.norm2 = nn.LayerNorm(config.model_dim)
 
     def forward(self, x):
-        x = self.norm1(x + self.attention(x))
-        x = self.norm2(x + self.mlp(x))
+        x = self.norm1(x)
+        x = x + self.attention(x)
+        x = self.norm2(x)
+        x = x + self.mlp(x)
         return x
 
 class Bert(nn.Module):
@@ -121,6 +123,7 @@ class Bert(nn.Module):
         )
 
         self.pos_embedding = SinusoidalPositionalEmbedding(config)
+        self.embedding_norm = nn.LayerNorm(config.model_dim)
 
         self.encoder_layers = nn.ModuleList(
             [ EncoderLayer(config) for _ in range(config.n_layers) ]
@@ -134,6 +137,7 @@ class Bert(nn.Module):
     def forward(self, x):
         x = self.embedding(x)
         x = self.pos_embedding(x)
+        x = self.embedding_norm(x)
 
         for layer in self.encoder_layers:
             x = layer(x)
