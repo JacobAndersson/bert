@@ -13,6 +13,7 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 
 torch.manual_seed(42)
 np.random.seed(42)
+torch.set_printoptions(threshold=10_000)
 
 logger = logging.getLogger(__name__)
 
@@ -163,15 +164,8 @@ def main(
             if wandb:
                 wandb.log({'test_loss': avg_loss})
 
-
-
-
-        if dry_run and step > 5:
+        if dry_run and step >= 5:
             break
-
-        #y_pred = torch.functional.F.softmax(y_pred, dim=1)
-        #output_pred = torch.argmax(y_pred, dim=1)
-
 
 if __name__ == '__main__':
     fire.Fire(main)

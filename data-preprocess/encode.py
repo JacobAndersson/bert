@@ -7,16 +7,21 @@ import fire
 import numpy as np
 
 def dump_dataset(data, path, sequence_length=512):
-    #TODO - use memmap
     num_rows = len(data)
-    array = np.zeros((num_rows, sequence_length), dtype=np.uint16)
 
-    for i, row in enumerate(data):
-        tokens = row['tokens']
-        array[i, :] = tokens
+    with open(path, 'w+b') as f:
+        array = np.memmap(
+            f,
+            dtype=np.uint16,
+            mode='w+',
+            shape=(num_rows, sequence_length)
+        )
 
-    with open(path, 'wb') as f:
-        pickle.dump(array, f)
+        for i, row in enumerate(data):
+            tokens = row['tokens']
+            array[i, :] = tokens
+
+        del array
 
 def save(data, data_test, sequence_length=512, tokenizer_path='./tokenizer.json'):
     pth = os.path.join(os.path.dirname(__file__), 'data.bin')
@@ -63,6 +68,12 @@ def main(tokenizer_path='./tokenizer.json', sequence_length=128):
 
     def encode(text):
         enc = tokenizer.encode(text['text'])
+
+        for id in enc.ids:
+            if id >= 2**15:
+                print(text)
+                print(enc.ids)
+                raise Exception('id too large')
         return {"tokens": enc.ids, "len": len(enc)}
 
     def transform(text):

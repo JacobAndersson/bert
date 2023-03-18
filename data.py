@@ -30,7 +30,8 @@ class WikiText(Dataset):
                 f,
                 dtype=np.uint16,
                 mode='r',
-                shape=(num_rows, self.meta['sequence_length'])
+                shape=(num_rows, self.meta['sequence_length']),
+                order='F'
             )
 
     def __len__(self):
