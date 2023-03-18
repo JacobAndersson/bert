@@ -31,7 +31,7 @@ def main(
     device='cuda',
     dry_run=False,
     bias=False,
-    wandb=False,
+    use_wandb=False,
     checkpoint_interval=100,
     testing_interval=100,
     testing_samples=20,
@@ -45,7 +45,7 @@ def main(
         bias=bias,
     )
 
-    if wandb:
+    if use_wandb:
         logger.info('Init wandb')
         wandb.init(project='bert', config=config)
 
@@ -114,7 +114,7 @@ def main(
         elapsed = time.time() - start
         logger.info(f"step: {step}, loss: {loss.item():.4f}, lr: {lr}, batch took: {elapsed:.2f}s")
 
-        if wandb:
+        if use_wandb:
             wandb.log({'loss': loss.item(), 'lr': lr})
 
         if step % checkpoint_interval == 0:
@@ -161,7 +161,7 @@ def main(
 
                 torch.save(checkpoint, f'checkpoints/best.pt')
 
-            if wandb:
+            if use_wandb:
                 wandb.log({'test_loss': avg_loss})
 
         if dry_run and step >= 5:
