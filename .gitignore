@@ -4,3 +4,5 @@
 *.pkl
 *.txt
 __pycache__/*
+checkpoints
+wandb

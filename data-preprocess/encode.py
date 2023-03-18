@@ -6,32 +6,37 @@ from tokenizers import Tokenizer
 import fire
 import numpy as np
 
-
-def save(data, sequence_length=512, tokenizer_path='./tokenizer.json'):
-    num_rows = len(data)
-    pth = os.path.join(os.path.dirname(__file__), 'data.bin')
-    meta_path = os.path.join(os.path.dirname(__file__), 'meta.pkl')
-
+def dump_dataset(data, path, sequence_length=512):
     #TODO - use memmap
+    num_rows = len(data)
     array = np.zeros((num_rows, sequence_length), dtype=np.uint16)
-
-    meta = {
-        'num_rows': num_rows,
-        'sequence_length': sequence_length,
-        'data_pth': pth,
-        'tokenizer_path': tokenizer_path
-    }
 
     for i, row in enumerate(data):
         tokens = row['tokens']
         array[i, :] = tokens
 
-    with open(pth, 'wb') as f:
+    with open(path, 'wb') as f:
         pickle.dump(array, f)
 
+def save(data, data_test, sequence_length=512, tokenizer_path='./tokenizer.json'):
+    pth = os.path.join(os.path.dirname(__file__), 'data.bin')
+    pth_test = os.path.join(os.path.dirname(__file__), 'data_test.bin')
+    meta_path = os.path.join(os.path.dirname(__file__), 'meta.pkl')
+
+    meta = {
+        'num_rows': len(data),
+        'num_rows_test': len(data_test),
+        'sequence_length': sequence_length,
+        'data_pth': pth,
+        'data_pth_test': pth_test,
+        'tokenizer_path': tokenizer_path
+    }
+        
     with open(meta_path, 'wb') as f:
         pickle.dump(meta, f)
 
+    dump_dataset(data, pth, sequence_length=sequence_length)
+    dump_dataset(data_test, pth_test, sequence_length=sequence_length)
 
 def main(tokenizer_path='./tokenizer.json', sequence_length=128):
     print('Loading tokenizer from {}'.format(tokenizer_path))
@@ -88,7 +93,15 @@ def main(tokenizer_path='./tokenizer.json', sequence_length=128):
     for row in data:
         transformed_data.extend(transform(row))
 
-    save(transformed_data, sequence_length=sequence_length+1, tokenizer_path=tokenizer_path)
+    train_data = transformed_data[:int(len(transformed_data)*0.9)]
+    test_data = transformed_data[int(len(transformed_data)*0.9):]
+
+    save(
+        train_data,
+        test_data,
+        sequence_length=sequence_length+1,
+        tokenizer_path=tokenizer_path
+    )
 
 if __name__ == '__main__':
     fire.Fire(main)

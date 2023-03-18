@@ -6,11 +6,10 @@ import math
 import torch
 
 class WikiText(Dataset):
-    def __init__(self, path):
+    def __init__(self, path, train=True):
 
         with open(path, 'rb') as f:
             self.meta = pickle.load(f)
-            self.length = self.meta['num_rows']
 
             tokenizer_path = self.meta['tokenizer_path']
             self.tokenizer = Tokenizer.from_file(tokenizer_path)
@@ -18,15 +17,20 @@ class WikiText(Dataset):
         self.mask_id = self.tokenizer.model.token_to_id('[MASK]')
         self.pad_id = self.tokenizer.model.token_to_id('[PAD]')
 
-        # TODO: load vocab size from tokenizer
-        self.vocab_size = 2**15 
+        self.vocab_size = self.tokenizer.get_vocab_size()
 
-        with open(self.meta['data_pth'], 'r+b') as f:
+        data_pth = self.meta['data_pth'] if train else self.meta['data_pth_test']
+        num_rows = self.meta['num_rows'] if train else self.meta['num_rows_test']
+
+        self.length = num_rows
+        print('Loading data from {}'.format(data_pth))
+
+        with open(data_pth, 'r+b') as f:
             self.data = np.memmap(
                 f,
                 dtype=np.uint16,
                 mode='r',
-                shape=(self.meta['num_rows'], self.meta['sequence_length'])
+                shape=(num_rows, self.meta['sequence_length'])
             )
 
     def __len__(self):
