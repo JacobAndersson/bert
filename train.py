@@ -72,8 +72,8 @@ def main(
             x, y = next(data_loader)
         except StopIteration:
             if train:
-                data_loader = iter(loader)
-                loader = data_loader
+                loader_iter = iter(loader)
+                data_loader = loader_iter
             else:
                 loader_test_iter = iter(loader_test)
                 data_loader = loader_test_iter
