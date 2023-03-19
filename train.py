@@ -67,18 +67,18 @@ def main(
         nonlocal loader
         nonlocal loader_test
 
-        loader = loader_iter if train else loader_test_iter
+        data_loader = loader_iter if train else loader_test_iter
         try:
-            x, y = next(loader)
+            x, y = next(data_loader)
         except StopIteration:
             if train:
-                loader_iter = iter(loader)
-                loader = loader_iter
+                data_loader = iter(loader)
+                loader = data_loader
             else:
                 loader_test_iter = iter(loader_test)
-                loader = loader_test_iter
+                data_loader = loader_test_iter
 
-            x, y = next(loader)
+            x, y = next(data_loader)
 
         x = x.to(device)
         y = y.to(device)
