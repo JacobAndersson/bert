@@ -35,6 +35,7 @@ def main(
     checkpoint_interval=100,
     testing_interval=100,
     testing_samples=20,
+    data_path='./data-preprocess/meta.pkl',
 ):
     config = BertConfig(
         model_dim=model_dim,
@@ -49,20 +50,36 @@ def main(
         logger.info('Init wandb')
         wandb.init(project='bert', config=config)
 
-    data = WikiText('./data-preprocess/meta.pkl', train=True)
+    data = WikiText(data_path, train=True)
     loader = DataLoader(data, batch_size=batch_size, shuffle=True)
     loader_iter = iter(loader)
 
-    data_test = WikiText('./data-preprocess/meta.pkl', train=False)
+    if len(loader) // grad_accumulation_steps < max_steps:
+        logger.info('Fewer steps than updates. Model will see the same data multiple times.')
+
+    data_test = WikiText(data_path, train=False)
     loader_test = DataLoader(data_test, batch_size=batch_size, shuffle=True)
     loader_test_iter = iter(loader_test)
 
-    def get_batch(loader_iter=loader_iter, device=device):
+    def get_batch(train, device=device):
+        nonlocal loader_iter
+        nonlocal loader_test_iter
+        nonlocal loader
+        nonlocal loader_test
+
+        loader = loader_iter if train else loader_test_iter
         try:
-            x, y = next(loader_iter)
+            x, y = next(loader)
         except StopIteration:
-            loader = iter(loader_iter)
-            x, y = next(loader_iter)
+            if train:
+                loader_iter = iter(loader)
+                loader = loader_iter
+            else:
+                loader_test_iter = iter(loader_test)
+                loader = loader_test_iter
+
+            x, y = next(loader)
+
         x = x.to(device)
         y = y.to(device)
         return x, y
@@ -101,7 +118,7 @@ def main(
 
         start = time.time()
         for _ in range(grad_accumulation_steps):
-            x, y = get_batch()
+            x, y = get_batch(True)
             y_pred = model(x)
             y_pred = y_pred.transpose(1, 2)
 
@@ -135,7 +152,7 @@ def main(
             avg_loss = 0
             with torch.no_grad():
                 for i in range(testing_samples):
-                    x, y = get_batch(loader_test_iter)
+                    x, y = get_batch(False)
                     y_pred = model(x)
                     y_pred = y_pred.transpose(1, 2)
 

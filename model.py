@@ -134,6 +134,8 @@ class Bert(nn.Module):
 
         self.embedding.weight = self.output.weight
 
+        self.apply(self._weight_init)
+
     def forward(self, x):
         x = self.embedding(x)
         x = self.pos_embedding(x)
@@ -156,3 +158,14 @@ class Bert(nn.Module):
         count -= self.embedding.weight.numel()
         return count
 
+    def _weight_init(self, module):
+        if isinstance(module, nn.Linear):
+            nn.init.xavier_uniform_(module.weight)
+            if module.bias is not None:
+                nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            nn.init.normal_(module.weight, std=0.02)
+        elif isinstance(module, nn.LayerNorm):
+            nn.init.ones_(module.weight)
+            if module.bias is not None:
+                nn.init.zeros_(module.bias)
