@@ -3,14 +3,10 @@
 The [cramming paper](https://arxiv.org/abs/2212.14034) showed that it is possible to almost reproduce BERT on 24h of compute on consumer grade hardware. That sounds fun, lets try it!
 
 # TODO
-
-* Model
- * sinusiodal position embedding
- * weight init
-* results :p
- * test set
+ * results :p
  * simple visualizer
  * Fine tuning on proper dataset
+ * Switch to the proper dataset
 
 nice to have
 * Multi gpu support

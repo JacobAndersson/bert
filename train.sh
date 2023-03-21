@@ -4,7 +4,7 @@ python3 train.py \
   --grad_accumulation_steps=32 \
   --n_layers=12 \
   --n_heads=12 \
-  --d_model=768 \
-  --d_ff=3072 \
+  --model_dim=768 \
+  --ff_dim=3072 \
   --testing_interval=20 \
   --bias=False
