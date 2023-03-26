@@ -5,6 +5,7 @@ from datasets import load_dataset, Dataset
 from tokenizers import Tokenizer
 import fire
 import numpy as np
+import dataset
 
 def dump_dataset(data, path, sequence_length=512):
     num_rows = len(data)
@@ -55,16 +56,19 @@ def main(tokenizer_path='./tokenizer.json', sequence_length=128):
         length=sequence_length
     )
 
+    '''
     data = load_dataset(
         'wikitext',
         'wikitext-2-v1',
         split='train+validation+test'
     )
+    '''
+    data = dataset.load()
 
     cls_id = tokenizer.model.token_to_id('[CLS]')
     pad_id = tokenizer.model.token_to_id('[PAD]')
 
-    data = data.filter(lambda x: len(x['text']) > 0)
+    #data = data.filter(lambda x: len(x['text']) > 0)
 
     def encode(text):
         enc = tokenizer.encode(text['text'])

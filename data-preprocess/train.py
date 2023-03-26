@@ -1,11 +1,10 @@
-
-from datasets import load_dataset
-
 from tokenizers import Tokenizer
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import Whitespace, BertPreTokenizer
 from tokenizers.processors import TemplateProcessing
+
+import dataset
 
 tokenizer = Tokenizer(BPE(unk_token="[UNK]"))
 trainer = BpeTrainer(
@@ -14,18 +13,7 @@ trainer = BpeTrainer(
 )
 
 tokenizer.pre_tokenizer = BertPreTokenizer()
-
-
-'''
-tokenizer.post_processor = TemplateProcessing(
-    single="[CLS] $0",
-    special_tokens=[("[CLS]", 1)]
-)
-'''
-
-data = load_dataset('wikitext', 'wikitext-2-v1', split='train+validation+test')
-
-data = data.filter(lambda x: len(x['text']) > 0)
+data = dataset.load()
 
 def train_iter(batch_size):
     for i in range(0, len(data), batch_size):
