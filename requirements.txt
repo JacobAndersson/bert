@@ -5,4 +5,5 @@ tokenizers
 fire
 wandb
 unidecode
-apache-beam
+multiprocess==0.70.9
+apache-beam==2.45
