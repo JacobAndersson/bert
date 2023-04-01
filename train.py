@@ -135,6 +135,7 @@ def main(
             wandb.log({'loss': loss.item(), 'lr': lr})
 
         if step % checkpoint_interval == 0:
+            print('Saving checkpoint')
             checkpoint = {
                 'model': model.state_dict(),
                 'step': step,
@@ -153,6 +154,7 @@ def main(
             with torch.no_grad():
                 for i in range(testing_samples):
                     x, y = get_batch(False)
+                    print(x.shape)
                     y_pred = model(x)
                     y_pred = y_pred.transpose(1, 2)
 

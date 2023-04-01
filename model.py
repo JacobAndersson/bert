@@ -4,6 +4,11 @@ import torch
 import torch.nn.functional as F
 import math
 
+#torch.backends.cuda.enable_flash_sdp()
+torch.backends.cuda.enable_flash_sdp(True)
+
+#print torch version
+print(torch.__version__)
 
 @dataclasses.dataclass
 class BertConfig:
@@ -65,6 +70,7 @@ class MultiHeadAttention(nn.Module):
         query = self.q(x).view(B, T, self.n_heads, C // self.n_heads).transpose(1,2)
         value = self.v(x).view(B, T, self.n_heads, C // self.n_heads).transpose(1,2)
 
+        '''
         attention = (query @ key.transpose(-2, -1))*1/(math.sqrt(self.dim))
         attention = F.softmax(attention, dim=-1)
         attention = attention@value
@@ -72,6 +78,11 @@ class MultiHeadAttention(nn.Module):
         y = attention.transpose(1,2).contiguous().view(B, T, C)
 
         y = self.output_dropout(self.w(y))
+        '''
+
+        y = F.scaled_dot_product_attention(query, key, value, dropout_p=self.config.dropout)
+        y = y.transpose(1,2).contiguous().view(B, T, C)
+        print(y.shape)
 
         return y
 

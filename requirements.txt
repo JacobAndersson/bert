@@ -1,6 +1,6 @@
 sentencepiece
 datasets
-torch
+torch==2.0.0
 tokenizers
 fire
 wandb

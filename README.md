@@ -7,6 +7,10 @@ The [cramming paper](https://arxiv.org/abs/2212.14034) showed that it is possibl
  * simple visualizer
  * Fine tuning on proper dataset
  * Switch to the proper dataset
-
+ * testing script:
+    * load model
+    * swap out FFN head
+    * fine tune loop
+    * eval loop
 nice to have
 * Multi gpu support
