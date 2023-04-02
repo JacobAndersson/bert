@@ -7,9 +7,6 @@ import math
 #torch.backends.cuda.enable_flash_sdp()
 torch.backends.cuda.enable_flash_sdp(True)
 
-#print torch version
-print(torch.__version__)
-
 @dataclasses.dataclass
 class BertConfig:
     model_dim: int = 768
@@ -79,10 +76,8 @@ class MultiHeadAttention(nn.Module):
 
         y = self.output_dropout(self.w(y))
         '''
-
         y = F.scaled_dot_product_attention(query, key, value, dropout_p=self.config.dropout)
         y = y.transpose(1,2).contiguous().view(B, T, C)
-        print(y.shape)
 
         return y
 

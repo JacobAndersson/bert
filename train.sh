@@ -7,4 +7,6 @@ python3 train.py \
   --model_dim=768 \
   --ff_dim=3072 \
   --testing_interval=20 \
-  --bias=False
+  --bias=False \
+  --dropout=0.0 \
+  --use_wandb

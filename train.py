@@ -36,6 +36,7 @@ def main(
     testing_interval=100,
     testing_samples=20,
     data_path='./data-preprocess/meta.pkl',
+    dropout=0.1,
 ):
     config = BertConfig(
         model_dim=model_dim,
@@ -44,11 +45,15 @@ def main(
         n_heads=n_heads,
         ff_dim=ff_dim,
         bias=bias,
+        dropout=dropout,
     )
+
+    device_type = 'cuda' if 'cuda' in device else 'cpu'
+    ctx = torch.amp.autocast(device_type=device_type, dtype=torch.bfloat16)
 
     if use_wandb:
         logger.info('Init wandb')
-        wandb.init(project='bert', config=config)
+        wandb.init(project='bert-cram', config=config)
 
     data = WikiText(data_path, train=True)
     loader = DataLoader(data, batch_size=batch_size, shuffle=True)
@@ -119,8 +124,10 @@ def main(
         start = time.time()
         for _ in range(grad_accumulation_steps):
             x, y = get_batch(True)
-            y_pred = model(x)
-            y_pred = y_pred.transpose(1, 2)
+
+            with ctx:
+                y_pred = model(x)
+                y_pred = y_pred.transpose(1, 2)
 
             loss = criterion(y_pred, y)
             loss.backward()
@@ -154,9 +161,9 @@ def main(
             with torch.no_grad():
                 for i in range(testing_samples):
                     x, y = get_batch(False)
-                    print(x.shape)
-                    y_pred = model(x)
-                    y_pred = y_pred.transpose(1, 2)
+                    with ctx:
+                        y_pred = model(x)
+                        y_pred = y_pred.transpose(1, 2)
 
                     loss = criterion(y_pred, y)
                     avg_loss += loss.item()
