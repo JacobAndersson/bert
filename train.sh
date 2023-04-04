@@ -8,5 +8,4 @@ python3 train.py \
   --ff_dim=3072 \
   --testing_interval=20 \
   --bias=False \
-  --dropout=0.0 \
-  --use_wandb
+  --dropout=0.0 

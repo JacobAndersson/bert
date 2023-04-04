@@ -90,6 +90,7 @@ def main(
         return x, y
 
     model = Bert(config)
+    model = torch.compile(model)
     model.to(device)
 
     pad_idx = 3

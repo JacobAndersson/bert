@@ -31,8 +31,11 @@ def main(tokenizer_path = './tokenizer.json'):
         return { "tokens": tokens, 'label': x['label'], 'length': len(tokens) }
 
     data = dataset.map(encode, batched=False, remove_columns=['sentence'])
-
     dump_dataset(data, f'./{SUBSET}.bin')
+
+    dataset_test = load_dataset('glue', SUBSET, split='validation')
+    data_test = dataset_test.map(encode, batched=False, remove_columns=['sentence'])
+    dump_dataset(data_test, f'./{SUBSET}_test.bin')
 
 if __name__ == '__main__':
     fire.Fire(main)
